@@ -1,0 +1,52 @@
+#!/bin/bash --login
+
+# If running on a GPU, add:
+#$ -l nvidia_v100=2
+
+#$ -pe smp.pe 16         # Number of cores on a single compute node. GPU jobs can
+                         # use up to 8 cores per GPU.
+
+echo "Job is using $NGPUS GPU(s) with ID(s) $CUDA_VISIBLE_DEVICES and $NSLOTS CPU core(s)"
+export OMP_NUM_THREADS=$NSLOTS
+
+module load tools/env/proxy
+module load apps/binapps/anaconda3/2020.07
+
+conda activate graph_ae
+cd Graph_AE
+export PYTHONPATH=`pwd`
+
+export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
+export CUDA_LAUNCH_BLOCKING=1
+export TORCH_DISTRIBUTED_DEBUG=INFO
+
+
+#python train_compression.py --d=WattsStrogatz --num_epoch_cp=50 --depth=3 --k=1 --group=64 --m=MIAGAE --cond --sub_space=16 --group=64
+#python train_compression.py --d=WattsStrogatz --num_epoch_cp=50 --depth=3 --k=1 --group=64 --m=Lie --cond --sub_space=16 --group=64
+#python train_compression.py --d=FactorGraphs --num_epoch_cp=50 --depth=3 --k=1 --group=64 --m=MIAGAE --cond --sub_space=16 --group=64
+#python train_compression.py --d=WattsStrogatz --num_epoch_cp=100 --depth=3 --k=1
+#python train_compression.py --d=ErdosRenyi --num_epoch_cp=100 --depth=3 --k=1
+
+python train_compression.py --m=Lie --d=FRANKENSTEIN --num_epoch_cp=500 --num_epoch_cf=1000
+#python train_compression.py --m=Lie --d=WattsStrogatz --points=300 --num_epoch_cp=150 --depth=3 --k=1 --beta=0.2 --hy_hes=10 --group=81
+
+
+# in paper
+#python train_compression.py --m=Lie --d="NCI1" --num_epoch_cf=1000 --num_epoch_cp=1 --n_train=1000 --n_test=1000 --n_skip=1500
+#python train_compression.py --m=Lie --d="Mutagenicity" --num_epoch_cp=1 --num_epoch_cf=1000 --depth=3 --k=2 --beta=0.2
+#python train_compression.py --m=Lie --d="COLORS-3" --num_epoch_cp=1 --num_epoch_cf=1000 --depth=3 --k=2 --beta=0.2
+#python train_compression.py --m=Lie --d="FRANKENSTEIN" --num_epoch_cp=1 --num_epoch_cf=1000 --depth=3 --k=2 --beta=0.2
+
+
+#python train_compression.py --d="Fingerprint" --num_epoch_cf=1000 --num_epoch_cp=1 --depth=3 --k=2 --beta=0.2 --n_train=1400 --n_test=400 --n_skip=800
+#python train_compression.py --d="REDDIT-MULTI-5K" --num_epoch_cf=1000 --num_epoch_cp=1 --n_train=3000 --n_test=600 --n_skip=1300
+#python train_compression.py --d="REDDIT-MULTI-12K" --num_epoch_cf=1000 --depth=3 --k=2 --beta=0.2
+
+# macro-molecules
+#python train_compression.py --d="ENZYMES" --num_epoch_cp=100 --depth=3 --k=2 --beta=0.2 --n_train=400 --n_test=100  # 600 32.63	62.14
+#python train_compression.py --d="DD" --num_epoch_cp=100 --depth=3 --k=2  --n_train=900 --n_test=100  # 1178 284	715
+#python train_compression.py --d="PROTEINS" --num_epoch_cf=1000 --num_epoch_cp=100 --depth=3 --k=2 --n_train=700 --n_test=100 --group=16  --n_skip=300 --n_train_cf=400 --n_test_cf=100    #1113  39.06	72.82
+
+# community graphs - social networks - seem not having data.x
+#python train_compression.py --d="COLLAB" --num_epoch_cf=1000 --num_epoch_cp=100 --n_train=3000 --n_test=1000 --n_skip=500 --n_train_cf=600 --n_test_cf=300
+
